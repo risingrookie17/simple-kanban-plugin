@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Kanban - Test Page</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .simple-kanban {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .simple-kanban-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .simple-kanban-project-select {
+      padding: 8px 32px 8px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      background: white;
+      color: #333;
+      min-width: 160px;
+      height: 36px;
+      line-height: 1.4;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .simple-kanban-project-select option {
+      padding: 8px 12px;
+      background: white;
+      color: #333;
+    }
+
+    .simple-kanban-refresh-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      color: #999;
+      padding: 0;
+    }
+
+    .simple-kanban-refresh-btn svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.3s ease;
+    }
+
+    .simple-kanban-refresh-btn:hover {
+      background: #f5f5f5;
+      color: #333;
+      border-color: #6366f1;
+    }
+
+    .simple-kanban-refresh-btn:hover svg {
+      transform: rotate(180deg);
+    }
+
+    .simple-kanban-add-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    .simple-kanban-add-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .simple-kanban-board {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+    }
+
+    .simple-kanban-column {
+      flex: 1;
+      min-width: 280px;
+      max-width: 350px;
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .simple-kanban-column[data-status="todo"] {
+      background: #fff3e0;
+    }
+
+    .simple-kanban-column[data-status="doing"] {
+      background: #e3f2fd;
+    }
+
+    .simple-kanban-column[data-status="done"] {
+      background: #e8f5e9;
+    }
+
+    .simple-kanban-column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 8px;
+    }
+
+    .simple-kanban-column-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .simple-kanban-task-count {
+      font-size: 12px;
+      color: #666;
+      background: rgba(255,255,255,0.8);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .simple-kanban-task-list {
+      min-height: 100px;
+    }
+
+    .simple-kanban-card {
+      background: white;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      cursor: grab;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .simple-kanban-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .simple-kanban-card:active {
+      cursor: grabbing;
+    }
+
+    .simple-kanban-card-dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+    }
+
+    .simple-kanban-column-drag-over {
+      background: #fff8e1;
+      border: 2px dashed #ffc107;
+    }
+
+    .simple-kanban-card-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .simple-kanban-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .simple-kanban-card-type {
+      background: #f0f0f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #666;
+    }
+
+    .simple-kanban-card-priority {
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .simple-kanban-card-due {
+      color: #666;
+    }
+
+    .simple-kanban-card-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .simple-kanban-card-edit,
+    .simple-kanban-card-delete {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    .simple-kanban-card-edit:hover {
+      background: #e0e0e0;
+    }
+
+    .simple-kanban-card-delete:hover {
+      background: #ffebee;
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div id="kanban-root"></div>
+
+  <script src="mock-environment.js"></script>
+  <script>
+    // Kanban Renderer
+    class KanbanRenderer {
+      constructor() {
+        this.draggedTask = null;
+        this.draggedFromColumn = null;
+        this.render();
+      }
+
+      render() {
+        const root = document.getElementById('kanban-root');
+        root.innerHTML = `
+          <div class="simple-kanban">
+            <div class="simple-kanban-header">
+              <select class="simple-kanban-project-select">
+                <option value="P-Test">测试项目</option>
+              </select>
+              <button class="simple-kanban-refresh-btn" onclick="kanban.render()" title="刷新">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                </svg>
+              </button>
+            </div>
+            <div class="simple-kanban-board">
+              ${this.renderColumn('todo', '待处理')}
+              ${this.renderColumn('doing', '进行中')}
+              ${this.renderColumn('done', '已完成')}
+            </div>
+          </div>
+        `;
+
+        this.setupDragAndDrop();
+      }
+
+      renderColumn(status, title) {
+        const tasks = window.getTasksByStatus(status);
+        const tasksHtml = tasks.map(task => this.renderTaskCard(task)).join('');
+
+        return `
+          <div class="simple-kanban-column" data-status="${status}">
+            <div class="simple-kanban-column-header">
+              <h3>${title}</h3>
+              <span class="simple-kanban-task-count">${tasks.length}</span>
+            </div>
+            <div class="simple-kanban-task-list" data-column="${status}">
+              ${tasksHtml}
+            </div>
+          </div>
+        `;
+      }
+
+      renderTaskCard(task) {
+        const priorityColors = {
+          high: '#ef4444',
+          medium: '#f59e0b',
+          low: '#22c55e'
+        };
+        const priorityColor = priorityColors[task.priority] || priorityColors.medium;
+
+        return `
+          <div class="simple-kanban-card"
+               draggable="true"
+               data-task-id="${task.id}"
+               data-column="${task.status}">
+            <div class="simple-kanban-card-title">${task.title}</div>
+            <div class="simple-kanban-card-meta">
+              <span class="simple-kanban-card-type">${task.task_type}</span>
+              <span class="simple-kanban-card-priority" style="background:${priorityColor}20;color:${priorityColor}">${task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      setupDragAndDrop() {
+        const cards = document.querySelectorAll('.simple-kanban-card');
+        const columns = document.querySelectorAll('.simple-kanban-column');
+
+        cards.forEach(card => {
+          card.addEventListener('dragstart', (e) => {
+            const taskId = card.dataset.taskId;
+            const columnId = card.dataset.column;
+
+            console.log('[E2E] Drag start:', taskId, 'from column:', columnId);
+
+            this.draggedTask = taskId;
+            this.draggedFromColumn = columnId;
+            card.classList.add('simple-kanban-card-dragging');
+            e.dataTransfer?.setData('text/plain', taskId);
+            e.dataTransfer && (e.dataTransfer.effectAllowed = 'move');
+          });
+
+          card.addEventListener('dragend', () => {
+            console.log('[E2E] Drag end');
+            card.classList.remove('simple-kanban-card-dragging');
+            setTimeout(() => {
+              if (this.draggedTask) {
+                console.log('[E2E] Clearing draggedTask');
+                this.draggedTask = null;
+                this.draggedFromColumn = null;
+              }
+            }, 100);
+          });
+        });
+
+        columns.forEach(column => {
+          column.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer && (e.dataTransfer.dropEffect = 'move');
+            column.classList.add('simple-kanban-column-drag-over');
+          });
+
+          column.addEventListener('dragleave', () => {
+            column.classList.remove('simple-kanban-column-drag-over');
+          });
+
+          column.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            column.classList.remove('simple-kanban-column-drag-over');
+
+            const toColumnId = column.dataset.status;
+            const taskId = this.draggedTask;
+
+            console.log('[E2E] Drop on column:', toColumnId, 'task:', taskId);
+
+            if (taskId && this.draggedFromColumn !== toColumnId) {
+              console.log('[E2E] Moving task:', taskId, 'from', this.draggedFromColumn, 'to', toColumnId);
+
+              try {
+                await window.updateTaskStatus(taskId, toColumnId);
+                console.log('[E2E] Task status updated');
+
+                // Re-render after update
+                this.render();
+                console.log('[E2E] Render complete');
+              } catch (err) {
+                console.error('[E2E] Error updating task:', err);
+              }
+            }
+
+            this.draggedTask = null;
+            this.draggedFromColumn = null;
+          });
+        });
+      }
+    }
+
+    // Initialize
+    window.initializeFiles();
+    const kanban = new KanbanRenderer();
+  </script>
+</body>
+</html>

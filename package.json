@@ -1,0 +1,31 @@
+{
+  "name": "simple-kanban-plugin",
+  "version": "0.1.0",
+  "description": "A minimalist kanban board plugin for Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs --dev",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test"
+  },
+  "keywords": [
+    "obsidian",
+    "kanban",
+    "productivity"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/jest": "^30.0.0",
+    "esbuild": "^0.27.4",
+    "http-server": "^14.1.1",
+    "jest": "^30.3.0",
+    "obsidian": "^1.12.3",
+    "playwright": "^1.58.2",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}

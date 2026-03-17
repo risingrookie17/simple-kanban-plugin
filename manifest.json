@@ -1,0 +1,10 @@
+{
+  "id": "simple-kanban",
+  "name": "Simple Kanban",
+  "version": "0.1.0",
+  "description": "A minimalist kanban board plugin for Obsidian",
+  "author": "",
+  "minApiVersion": "0.15.0",
+  "isDesktopOnly": false,
+  "styles": ["styles/kanban.css"]
+}
