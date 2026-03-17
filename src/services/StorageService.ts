@@ -1,4 +1,4 @@
-import { App, TFolder, TFile } from 'obsidian';
+import { App, TFolder, TFile, Menu } from 'obsidian';
 import { KanbanBoard, KanbanProject, KanbanTask, KanbanColumn, TaskStatus, TaskType, Priority, TaskFrontmatter, STATUS_ORDER, STATUS_MAP } from '../types';
 import { updateFrontmatterStatus } from './FrontmatterParser';
 
@@ -8,6 +8,41 @@ export class StorageService {
 
   constructor(app: App) {
     this.app = app;
+  }
+
+  // 创建新项目
+  async createProject(projectName: string): Promise<KanbanProject | null> {
+    const folderName = projectName.startsWith('P-') ? projectName : `P-${projectName}`;
+    const projectPath = `${this.projectsPath}/${folderName}`;
+    const taskPath = `${projectPath}/任务`;
+
+    try {
+      // 检查项目是否已存在
+      const existingProject = this.app.vault.getAbstractFileByPath(projectPath);
+      if (existingProject) {
+        console.log('Project already exists:', projectPath);
+        return null;
+      }
+
+      // 创建项目文件夹
+      await this.app.vault.createFolder(projectPath);
+
+      // 检查任务文件夹是否已存在，不存在则创建
+      const existingTaskFolder = this.app.vault.getAbstractFileByPath(taskPath);
+      if (!existingTaskFolder) {
+        await this.app.vault.createFolder(taskPath);
+      }
+
+      return {
+        id: folderName,
+        name: projectName.replace('P-', ''),
+        path: projectPath,
+        taskFolder: taskPath
+      };
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      return null;
+    }
   }
 
   // 扫描所有项目
@@ -21,8 +56,19 @@ export class StorageService {
 
     for (const item of rootFolder.children) {
       if (item instanceof TFolder && item.name.startsWith('P-')) {
-        // 查找任务文件夹
-        const taskFolder = this.app.vault.getAbstractFileByPath(`${item.path}/任务`);
+        // 查找或创建任务文件夹
+        let taskFolder = this.app.vault.getAbstractFileByPath(`${item.path}/任务`);
+
+        // 如果任务文件夹不存在，自动创建
+        if (!taskFolder || !(taskFolder instanceof TFolder)) {
+          try {
+            await this.app.vault.createFolder(`${item.path}/任务`);
+            taskFolder = this.app.vault.getAbstractFileByPath(`${item.path}/任务`);
+          } catch (e) {
+            console.warn('Could not create task folder:', e);
+          }
+        }
+
         if (taskFolder && taskFolder instanceof TFolder) {
           projects.push({
             id: item.name,

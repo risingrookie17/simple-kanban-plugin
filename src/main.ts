@@ -1,5 +1,6 @@
-import { Plugin, Setting } from 'obsidian';
+import { Plugin, Setting, Menu, TFolder } from 'obsidian';
 import { KanbanView } from './views/KanbanView';
+import { StorageService } from './services/StorageService';
 
 export default class SimpleKanban extends Plugin {
   async onload(): Promise<void> {
@@ -18,13 +19,62 @@ export default class SimpleKanban extends Plugin {
       callback: () => this.openKanban()
     });
 
+    // 添加命令：新建项目
+    this.addCommand({
+      id: 'new-kanban-project',
+      name: '新建看板项目',
+      callback: () => this.createNewProject()
+    });
+
     // 添加左侧栏按钮
     this.addRibbonIcon('layout', '打开看板', () => {
       this.openKanban();
     });
 
+    // 注册右键菜单
+    this.registerEvent(this.app.workspace.on('context-menu', (menu: Menu, file: any) => {
+      // 检查是否是 Projects 文件夹或其子文件夹
+      if (file instanceof TFolder) {
+        const path = file.path;
+        if (path === 'Projects' || path.startsWith('Projects/')) {
+          menu.addItem((item) => {
+            item
+              .setTitle('新建看板项目')
+              .setIcon('plus')
+              .onClick(() => {
+                this.createNewProject(file.path === 'Projects' ? '' : file.name);
+              });
+          });
+        }
+      }
+    }));
+
     // 添加设置页面
     this.addSettingTab(new SimpleKanbanSetting(this));
+  }
+
+  // 创建新项目
+  async createNewProject(parentFolder: string = ''): Promise<void> {
+    const storage = new StorageService(this.app);
+    const projectName = parentFolder ? parentFolder.replace('P-', '') : '';
+
+    // 打开看板视图并触发新建项目弹窗
+    this.openKanban();
+
+    // 延迟执行，等待视图渲染完成
+    setTimeout(() => {
+      const view = this.app.workspace.getActiveViewOfType(KanbanView);
+      if (view) {
+        // 如果传入了父文件夹名称，直接创建
+        if (parentFolder && parentFolder !== 'Projects') {
+          storage.createProject(parentFolder.replace('P-', '')).then(async () => {
+            await view.refresh();
+          });
+        } else {
+          view.showCreateProjectModal();
+        }
+      }
+    }, 100);
   }
 
   // 加载 CSS 样式 - 全新设计的现代简洁风格
@@ -466,6 +516,12 @@ export default class SimpleKanban extends Plugin {
   color: var(--sk-text);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.simple-kanban-modal-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--sk-text-muted);
 }
 
 .simple-kanban-modal-field input,

@@ -145,6 +145,12 @@ export class KanbanView extends View {
       this.switchProject(projectSelect.value);
     });
 
+    // 新建项目按钮
+    const newProjectBtn = controls.createEl('button');
+    newProjectBtn.className = 'simple-kanban-add-btn';
+    newProjectBtn.textContent = '+ 新建项目';
+    newProjectBtn.addEventListener('click', () => this.showCreateProjectModal());
+
     // 新建任务按钮
     const addBtn = controls.createEl('button');
     addBtn.className = 'simple-kanban-add-btn';
@@ -364,6 +370,32 @@ export class KanbanView extends View {
       await this.storage.deleteTask(task);
       await this.refresh();
     }
+  }
+
+  // 显示创建项目弹窗
+  showCreateProjectModal(): void {
+    const modal = this.createModal('新建项目', `
+      <div class="simple-kanban-modal-field">
+        <label>项目名称</label>
+        <input type="text" id="project-name" placeholder="输入项目名称（无需加 P- 前缀）" autofocus>
+        <p class="simple-kanban-modal-hint">将自动在 Projects 文件夹下创建 P-项目名称/任务/ 结构</p>
+      </div>
+    `, async () => {
+      const name = (document.getElementById('project-name') as HTMLInputElement).value.trim();
+
+      if (!name) return;
+
+      const project = await this.storage.createProject(name);
+      if (project) {
+        await this.refresh();
+        // 自动切换到新创建的项目
+        this.board!.selectedProject = project.id;
+        this.board!.projects = await this.storage.scanProjects();
+        this.render();
+      }
+    });
+
+    modal.open();
   }
 
   // 显示创建任务弹窗
